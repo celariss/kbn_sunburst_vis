@@ -4,7 +4,7 @@
   "authors": [
     "Juan Carniglia <juan.carniglia@gmail.com>"
   ],
-  "description": "sunburst diagram visualization plugin",
+  "description": "Sunburst diagram visualization plugin for Kibana 6.0.0-alpha1",
   "main": "index.js",
   "license": "Apache-2.0",
   "homepage": "https://github.com/JuanCarniglia/kbn_sunburst_vis",
@@ -17,7 +17,7 @@
     "build": "gulp build"
   },
   "devDependencies": {
-    "babel-eslint": "^4.1.8",
+    "babel-eslint": "^7.1.1",
     "bluebird": "^3.3.1",
     "eslint": "^2.1.0",
     "eslint-plugin-mocha": "^2.0.0",

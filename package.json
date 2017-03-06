@@ -7,12 +7,12 @@
   "description": "sunburst diagram visualization plugin",
   "main": "index.js",
   "license": "Apache-2.0",
-  "homepage": "http://kibana.logstash.es/",
+  "homepage": "https://github.com/JuanCarniglia/kbn_sunburst_vis",
+  "repository": "https://github.com/JuanCarniglia/kbn_sunburst_vis.git",
   "scripts": {
     "test": "gulp test",
     "test:coverage": "gulp coverage",
     "start": "gulp dev",
-    "postinstall": "bower install",
     "precommit": "gulp lint",
     "build": "gulp build"
   },
