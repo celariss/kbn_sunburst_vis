@@ -1,33 +1,38 @@
-define(function (require) {
-  require('ui/agg_table');
-  require('ui/agg_table/agg_table_group');
+import { VisFactoryProvider } from 'ui/vis/vis_factory';
+import { VisSchemasProvider } from 'ui/vis/editors/default/schemas';
+import kbnSunburstVisTemplate from './kbn_sunburst_vis.html';
 
-  require('plugins/kbn_sunburst_vis/kbn_sunburst_vis.less');
-  require('plugins/kbn_sunburst_vis/kbn_sunburst_vis_controller');
+import { VisTypesRegistryProvider } from 'ui/registry/vis_types';
+VisTypesRegistryProvider.register(KbnSunburstVisProvider);
 
-  require('ui/registry/vis_types').register(KbnSunburstVisProvider);
+import 'ui/agg_table';
+import 'ui/agg_table/agg_table_group';
 
-  function KbnSunburstVisProvider(Private) {
-    var TemplateVisType = Private(require('ui/template_vis_type/TemplateVisType'));
-    var Schemas = Private(require('ui/Vis/Schemas'));
+import './kbn_sunburst_vis.less';
+import './kbn_sunburst_vis_controller';
 
-    return new TemplateVisType({
-      name: 'kbn_sunburst',
-      title: 'Sunburst Diagram',
-      icon: 'fa-life-ring',
-      description: 'Cool D3 Sunburst',
-      template: require('plugins/kbn_sunburst_vis/kbn_sunburst_vis.html'),
-      params: {
-        defaults: {
-          showText: true,
-          showValues: true,
-          showMetricsAtAllLevels: false
-        },
-        editor: require('plugins/kbn_sunburst_vis/kbn_sunburst_vis_params.html') /*'<vislib-basic-options></vislib-basic-options>'*/
+function KbnSunburstVisProvider(Private) {
+  const VisFactory = Private(VisFactoryProvider);
+  const Schemas = Private(VisSchemasProvider);
+
+  return VisFactory.createAngularVisualization({
+    name: 'kbn_sunburst',
+    title: 'Sunburst Diagram',
+    icon: 'fa-life-ring',
+    description: 'Cool D3 Sunburst',
+    visConfig: {
+      defaults: {
+        showText: true,
+        showValues: true,
+        showMetricsAtAllLevels: false
       },
-      hierarchicalData: function (vis) {
-        return Boolean(vis.params.showPartialRows || vis.params.showMetricsAtAllLevels);
-      },
+      template: kbnSunburstVisTemplate
+    },
+    hierarchicalData: function (vis) {
+      return Boolean(vis.params.showPartialRows || vis.params.showMetricsAtAllLevels);
+    },
+    editorConfig: {
+      optionsTemplate: require('./kbn_sunburst_vis_params.html') /*'<vislib-basic-options></vislib-basic-options>'*/,
       schemas: new Schemas([
         {
           group: 'metrics',
@@ -35,9 +40,10 @@ define(function (require) {
           title: 'Split Size',
           min: 1,
           max: 1,
-          defaults: [
-            {type: 'count', schema: 'metric'}
-          ]
+          defaults: [{
+            type: 'count',
+            schema: 'metric'
+          }]
         },
         {
           group: 'buckets',
@@ -47,11 +53,12 @@ define(function (require) {
           min: 0,
           max: 5
         }
-      ]),
-      requiresSearch: true
-    });
-  }
+      ])
+    },
+    requiresSearch: true
+  });
+}
 
-  // export the provider so that the visType can be required with Private()
-  return KbnSunburstVisProvider;
-});
+// export the provider so that the visType can be required with Private()
+export default KbnSunburstVisProvider;
+

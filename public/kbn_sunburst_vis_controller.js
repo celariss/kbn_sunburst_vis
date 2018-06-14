@@ -1,129 +1,132 @@
-define(function (require) {
-  var module = require('ui/modules').get('kibana/kbn_sunburst_vis', ['kibana']);
-  var d3 = require('d3');
-  var _ = require('lodash');
-  var $ = require('jquery');
+  import { uiModules } from 'ui/modules';
+  const module = uiModules.get('kibana/kbn_sunburst_vis', ['kibana']);
+  import d3 from 'd3';
+  import _ from 'lodash';
+  //import $ from 'jquery';
 
-  var formatNumber = d3.format(',.0f');
+  import AggResponseProvider from './lib/agg_response';
+
+  //const formatNumber = d3.format(',.0f');
 
   module.controller('KbnSunburstVisController', function ($scope, $element, $rootScope, Private) {
-  var sunburstAggResponse = Private(require('./lib/agg_response'));
+    const sunburstAggResponse = Private(AggResponseProvider);
 
-  var svgRoot = $element[0];
-  var margin = 20;
-  var width = 700;
-  var height = 500;
+    const svgRoot = $element[0];
+    //const margin = 20;
+    const width = 700;
+    const height = 500;
 
-  var radius = Math.min(width, height) / 2;
+    const radius = Math.min(width, height) / 2;
 
-	var x = d3.scale.linear().range([0, 2 * Math.PI]);
-	var y = d3.scale.linear().range([0, radius]);
-	var color = d3.scale.category20c();
-  var div;
+    const x = d3.scale.linear().range([0, 2 * Math.PI]);
+    const y = d3.scale.linear().range([0, radius]);
+    const color = d3.scale.category20c();
 
-  var node, root;
+    //let node, root;
 
-  div = d3.select(svgRoot);
+    const div = d3.select(svgRoot);
 
-	var partition = d3.layout.partition()
-    .value(function(d) { return d.size; });
+    const partition = d3.layout.partition()
+      .value(function (d) { return d.size; });
 
-	var arc = d3.svg.arc()
-		.startAngle( function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x))); })
-		.endAngle(   function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x + d.dx))); })
-		.innerRadius(function(d) { return Math.max(0, y(d.y)); })
-		.outerRadius(function(d) { return Math.max(0, y(d.y + d.dy)); });
+    const arc = d3.svg.arc()
+      .startAngle( function (d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x))); })
+      .endAngle(   function (d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x + d.dx))); })
+      .innerRadius(function (d) { return Math.max(0, y(d.y)); })
+      .outerRadius(function (d) { return Math.max(0, y(d.y + d.dy)); });
 
-  var _buildVis = function (root) {
+    const _buildVis = function (root) {
 
-    var svg = div.append("svg")
-      .attr("width", width)
-      .attr("height", height)
-      .append("g")
-      .attr("transform", "translate(" + width / 2 + "," + (height / 2 + 10) + ")");
+      let text;
+      let textValue;
 
-    var g = svg.selectAll("g")
-      .data(partition.nodes(root))
-      .enter().append("g");
+      const svg = div.append('svg')
+        .attr('width', width)
+        .attr('height', height)
+        .append('g')
+        .attr('transform', 'translate(' + width / 2 + ',' + (height / 2 + 10) + ')');
 
-		var path = g.append("path")
-			.attr("d", arc)
-			.style("fill", function(d) { return color((d.children ? d : d.parent).name); })
-			.on("click", click);
+      const g = svg.selectAll('g')
+        .data(partition.nodes(root))
+        .enter().append('g');
 
-    if ($scope.vis.params.showText) {
-    var text = g.append("text")
-        .attr("transform", function(d) { return "rotate(" + computeTextRotation(d) + ")"; })
-        .attr("x", function(d) { return y(d.y); })
-        .attr("dx", "6") // margin
-        .attr("dy", ".35em") // vertical-align
-        .text(function(d) { return ( d.name == "flare" ? "" : d.name); });
-    }
+      const path = g.append('path')
+        .attr('d', arc)
+        //.style('fill', function (d) { return color((d.children ? d : d.parent).name); })
+        .on('click', click);
 
-    if ($scope.vis.params.showValues) {
-      var textValue = g.append("text")
-          .attr("transform", function(d) { return "rotate(" + computeTextRotation(d) + ")"; })
-          .attr("x", function(d) { return y(d.y); })
-          .attr("dx", "6") // margin
-          .attr("dy", "1.35em") // vertical-align
-          .attr("fill", "darkblue")
-          .text(function(d) { return ( d.name == "flare" ? "" : "(" + d.size + ")"); });
-    }
+      if ($scope.vis.params.showText) {
+        text = g.append('text')
+          .attr('transform', function (d) { return 'rotate(' + computeTextRotation(d) + ')'; })
+          .attr('x', function (d) { return y(d.y); })
+          .attr('dx', '6') // margin
+          .attr('dy', '.35em') // vertical-align
+          .text(function (d) { return(d.name === 'flare' ? '' : d.name); });
+      }
 
-		function click(d) {
+      if ($scope.vis.params.showValues) {
+        textValue = g.append('text')
+            .attr('transform', function (d) { return 'rotate(' + computeTextRotation(d) + ')'; })
+            .attr('x', function (d) { return y(d.y); })
+            .attr('dx', '6') // margin
+            .attr('dy', '1.35em') // vertical-align
+            .attr('fill', 'darkblue')
+            .text(function (d) { return(d.name === 'flare' ? '' : '(' + d.size + ')'); });
+      }
 
-      if (text) text.transition().attr("opacity", 0);
-      if (textValue) textValue.transition().attr("opacity", 0);
+      function click(d) {
 
-  		path.transition()
-  		  .duration(250)
-  		  .attrTween("d", arcTween(d))
-        .each("end", function(e, i) {
-          // check if the animated element's data e lies within the visible angle span given in d
-          if (e.x >= d.x && e.x < (d.x + d.dx)) {
-            // get a selection of the associated text element(s)
-            var arcText = d3.select(this.parentNode).selectAll("text");
-            // fade in the text element and recalculate positions
-            if (arcText) {
-              arcText.transition().duration(250)
-                .attr("opacity", 1)
-                .attr("transform", function() { return "rotate(" + computeTextRotation(e) + ")" })
-                .attr("x", function(d) { return y(d.y); });
+        if (text) text.transition().attr('opacity', 0);
+        if (textValue) textValue.transition().attr('opacity', 0);
+
+        path.transition()
+          .duration(250)
+          .attrTween('d', arcTween(d))
+          .each('end', function (e, i) {
+            // check if the animated element's data e lies within the visible angle span given in d
+            if (e.x >= d.x && e.x < (d.x + d.dx)) {
+              // get a selection of the associated text element(s)
+              const arcText = d3.select(this.parentNode).selectAll('text');
+              // fade in the text element and recalculate positions
+              if (arcText) {
+                arcText.transition().duration(250)
+                  .attr('opacity', 1)
+                  .attr('transform', function () { return 'rotate(' + computeTextRotation(e) + ')'; })
+                  .attr('x', function (d) { return y(d.y); });
+              }
             }
-          }
-        });
-  		}
-    };
+          });
+        }
+      };
 
 
-    var _render = function (data) {
+    const _render = function (data) {
     	d3.select(svgRoot).selectAll('svg').remove();
       	_buildVis(data.children);
     };
 
     $scope.$watch('esResponse', function (resp) {
       	if (resp) {
-        	var chartData = sunburstAggResponse($scope.vis, resp);
+        	const chartData = sunburstAggResponse($scope.vis, resp);
         	_render(chartData);
       	}
     });
 
-   d3.select(self.frameElement).style("height", height + "px");
+    d3.select(self.frameElement).style('height', height + 'px');
 
-  function arcTween(d) {
-    var xd = d3.interpolate(x.domain(), [d.x, d.x + d.dx]),
-        yd = d3.interpolate(y.domain(), [d.y, 1]),
-        yr = d3.interpolate(y.range(), [d.y ? 20 : 0, radius]);
-    return function(d, i) {
-      return i
-          ? function(t) { return arc(d); }
-          : function(t) { x.domain(xd(t)); y.domain(yd(t)).range(yr(t)); return arc(d); };
-    };
-  }
+    function arcTween(d) {
+      const xd = d3.interpolate(x.domain(), [d.x, d.x + d.dx]);
+      const yd = d3.interpolate(y.domain(), [d.y, 1]);
+      const yr = d3.interpolate(y.range(), [d.y ? 20 : 0, radius]);
+      return function (d, i) {
+        return i
+            ? function (t) { return arc(d); }
+            : function (t) { x.domain(xd(t)); y.domain(yd(t)).range(yr(t)); return arc(d); };
+      };
+    }
 
-  function computeTextRotation(d) {
-    return (x(d.x + d.dx / 2) - Math.PI / 2) / Math.PI * 180;
-  }
+    function computeTextRotation(d) {
+      return (x(d.x + d.dx / 2) - Math.PI / 2) / Math.PI * 180;
+    }
 
   });
-});

@@ -1,94 +1,108 @@
-define(function (require) {
-  return function sunburstProvider(Private, Notifier) {
-    var _ = require('lodash');
-    var arrayToLinkedList = require('ui/agg_response/hierarchical/_array_to_linked_list');
-    var notify = new Notifier({
-      location: 'Sunburst chart response converter'
-    });
+import _ from 'lodash';
+import { arrayToLinkedList } from 'ui/agg_response/hierarchical/_array_to_linked_list';
 
-    var nodes = [];
+module.exports = function sunburstProvider(Private, Notifier) {
+  let notify = new Notifier({
+    location: 'Sunburst chart response converter'
+  });
 
-    var bucket_temp = null;
-    var bucket_position = 0;
+  let nodes = [];
 
-  	function processEntryRecursive(data, parent) {
+  let buckettemp = null;
+  let bucketposition = 0;
 
-  		bucket_position = 0;
+  // TODO : change for kibana 6.2.2 compatibility
+  function processEntryRecursive(data, parent) {
+    
 
-  		for (var t=0; t < _.size(data.buckets); t++) {
-  			var bucket = data.buckets[t];
+    bucket_position = 0;
 
-  			bucket_temp = null;
+    for (var t=0; t < _.size(data.buckets); t++) {
+      var bucket = data.buckets[t];
 
-  			if (!bucket) {
+      bucket_temp = null;
 
-  				var pos = 0;
-  				var found = false;
-  				_.each(data.buckets, function(a,b) {
+      if (!bucket) {
 
-  					if (!found) {
-  						if (bucket_position == pos) {
-  						bucket_temp = a;
-  						bucket_temp.key = b;
-  						bucket_position++;
-  						found = true;
-  						}
-  					}
+        var pos = 0;
+        var found = false;
+        _.each(data.buckets, function(a,b) {
 
-  					pos++;
-  				});
+          if (!found) {
+            if (bucket_position == pos) {
+            bucket_temp = a;
+            bucket_temp.key = b;
+            bucket_position++;
+            found = true;
+            }
+          }
 
-  				if (bucket_temp) {
-  					bucket = bucket_temp;
-  				}
-  			}
-        
-  			var temp_node = { 'children' : null, 'name' : bucket.key, 'size' : bucket.doc_count };
+          pos++;
+        });
 
-  			// warning ...
+        if (bucket_temp) {
+          bucket = bucket_temp;
+        }
+      }
+      
+      var temp_node = { 'children' : null, 'name' : bucket.key, 'size' : bucket.doc_count };
 
-  			if (_.size(bucket) > 2) {
-  				var i = 0;
+      // warning ...
 
-  				while(!bucket[i] && i <= _.size(bucket)) { i++; }
+      if (_.size(bucket) > 2) {
+        var i = 0;
 
-  				if (bucket[i] && bucket[i].buckets) {
-  					// there are more
-  					   processEntryRecursive(bucket[i], temp_node);
-  				}
-  			}
+        while(!bucket[i] && i <= _.size(bucket)) { i++; }
 
-  			if (!parent.children) parent.children = [];
-
-  			parent.children.push(temp_node);
-  		}
-
-  	}
-
-    return function (vis, resp) {
-
-      var metric = vis.aggs.bySchemaGroup.metrics[0];
-      var children = vis.aggs.bySchemaGroup.buckets;
-      children = arrayToLinkedList(children);
-
-      if (!children)  {
-        return { 'children' : { 'children' : null }};
+        if (bucket[i] && bucket[i].buckets) {
+          // there are more
+             processEntryRecursive(bucket[i], temp_node);
+        }
       }
 
-      var firstAgg = children[0];
-      var aggData = resp.aggregations[firstAgg.id];
+      if (!parent.children) parent.children = [];
 
-      nodes = [];
+      parent.children.push(temp_node);
+    }
+  }
 
-      processEntryRecursive(aggData, nodes);
+  // TODO : change for kibana 6.2.2 compatibility
+  return function (vis, resp) {
 
-      var chart = {
-        'name' :'flare',
-        'children' : nodes,
-        'size' : 0
-      };
+    //console.log("vis :", vis);
+    //console.log("resp :", resp);
 
-      return chart;
+    //let metric = vis.aggs.bySchemaGroup.metrics[0];
+    let buckets = vis.aggs.bySchemaGroup.buckets;
+    // each item in bucket contains :
+    //   enabled
+    //   id
+    //   params {}
+    //   __schema
+    //   __type
+    buckets = arrayToLinkedList(buckets);
+    //console.log("buckets :", buckets);
+
+    if (!buckets) {
+      return { 'children': { 'children': null } };
+    }
+
+    //const firstAgg = children[0];
+    const aggData = resp.tables[0];
+
+    nodes = [];
+
+    processEntryRecursive(aggData, nodes);
+
+    let chart = {
+      'name': 'flare',
+      'children': nodes,
+      'size': 0
     };
+
+    //console.log("chart :", chart);
+
+    return chart;
   };
-});
+};
+
